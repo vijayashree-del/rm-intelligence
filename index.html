@@ -183,7 +183,6 @@ input[type=range]{accent-color:var(--bl);cursor:pointer;flex:1}
       <button class="unit-btn active" onclick="setUnit('L')">₹ Lakhs</button>
       <button class="unit-btn" onclick="setUnit('K')">₹ 000s (K)</button>
       <button class="unit-btn" onclick="setUnit('Cr')">₹ Crores</button>
-      <button class="unit-btn" onclick="setUnit('N')">Numbers</button>
     </div>
     <span class="fy-badge">FY27 Forecast (Apr 26 – Mar 27)</span>
   </div>
@@ -236,7 +235,8 @@ input[type=range]{accent-color:var(--bl);cursor:pointer;flex:1}
   <div class="card">
     <div class="ct">Account details</div>
     <p style="font-size:13px;color:var(--mt);margin-bottom:14px;line-height:1.6">
-      Relationship, Competitor risk, and Products are <strong>optional</strong>. Leave them blank to skip — the tool will classify using CAGR data alone. Only fill in what you actually know.
+      The three ratings below are <strong>optional</strong> — they improve classification accuracy but are not required.
+      All pre-set to 3 (average). Only update what you know.
     </p>
     <div class="lw-head">
       <span>Account</span>
@@ -439,7 +439,7 @@ var computed    = [];
 function setUnit(u) {
   currentUnit = u;
   document.querySelectorAll('.unit-btn').forEach(function(b,i){
-    b.classList.toggle('active', ['L','K','Cr','N'][i] === u);
+    b.classList.toggle('active', ['L','K','Cr'][i] === u);
   });
   // re-render if data exists
   if (computed.length) { recalcTargets(); renderPriorities(); renderMonthly(); renderSimulator(); renderInsights(); }
@@ -447,17 +447,20 @@ function setUnit(u) {
 }
 
 function fmtV(v) {
-  // v always stored in Lakhs internally
-  if (currentUnit === 'K') return (Math.round(v*10*10)/10).toLocaleString('en-IN') + 'K';
-  if (currentUnit === 'Cr') return (Math.round(v/100*100)/100).toFixed(2) + 'Cr';
-  if (currentUnit === 'N') return Math.round(v*100000).toLocaleString('en-IN');
+  // v is always stored in Lakhs internally
+  if (currentUnit === 'K') {
+    var k = v * 10; // 1L = 10K (thousands)
+    return (Math.round(k*10)/10).toLocaleString('en-IN') + 'K';
+  }
+  if (currentUnit === 'Cr') {
+    return (Math.round(v/100*100)/100).toFixed(2) + 'Cr';
+  }
   return (Math.round(v*10)/10).toLocaleString('en-IN') + 'L';
 }
 
 function fmtShort(v) {
   if (currentUnit === 'K') return Math.round(v*10).toLocaleString('en-IN') + 'K';
   if (currentUnit === 'Cr') return (Math.round(v/100*10)/10).toFixed(1) + 'Cr';
-  if (currentUnit === 'N') return Math.round(v*100000).toLocaleString('en-IN');
   return (Math.round(v*10)/10).toFixed(1) + 'L';
 }
 
@@ -623,17 +626,15 @@ function renderEnrichForm() {
     var cagr=cagrCalc(fy24,fy26,3);
     var cs=cagr!==null?(cagr>=0?'+':'')+cagr.toFixed(1)+'%':'—';
     var cc=cagr===null?'var(--mt)':cagr>=10?'var(--gn)':cagr>=0?'var(--am)':'var(--rd)';
+    var e=enriched[i];
     html+='<div class="lw-row">'+
       '<div class="lw-name" title="'+a.name+'">'+a.name+'</div>'+
       '<div class="mono" style="font-size:12px;color:'+cc+'">'+cs+'</div>'+
       '<div class="mono" style="font-size:12px">'+fmtV(fy26)+'</div>'+
       '<div style="display:flex;gap:6px;align-items:center">'+
-      '<span style="font-size:11px;color:var(--mt)">Rel</span>'+
-      '<select id="rel-'+i+'" style="padding:4px 6px;font-size:12px;width:60px;border-width:1px"><option value="0" selected>—</option>'+[1,2,3,4,5].map(function(n){return'<option value="'+n+'">'+n+'</option>'}).join('')+'</select>'+
-      '<span style="font-size:11px;color:var(--mt)">Comp</span>'+
-      '<select id="comp-'+i+'" style="padding:4px 6px;font-size:12px;width:60px;border-width:1px"><option value="0" selected>—</option>'+[1,2,3,4,5].map(function(n){return'<option value="'+n+'">'+n+'</option>'}).join('')+'</select>'+
-      '<span style="font-size:11px;color:var(--mt)">Prod</span>'+
-      '<select id="prod-'+i+'" style="padding:4px 6px;font-size:12px;width:60px;border-width:1px"><option value="0" selected>—</option>'+[1,2,3,4,5].map(function(n){return'<option value="'+n+'">'+n+'</option>'}).join('')+'</select>'+
+      '<span style="font-size:11px;color:var(--mt)">Rel</span>'+mkSel('rel-'+i,e.rel)+
+      '<span style="font-size:11px;color:var(--mt)">Comp</span>'+mkSel('comp-'+i,e.comp)+
+      '<span style="font-size:11px;color:var(--mt)">Prod</span>'+mkSel('prod-'+i,e.prod)+
       '</div></div>';
   });
   document.getElementById('enrich-list').innerHTML=html;
@@ -644,10 +645,9 @@ function syncEnrich() {
     var rs=document.getElementById('rel-'+i);
     var cs=document.getElementById('comp-'+i);
     var ps=document.getElementById('prod-'+i);
-    // 0 means not provided — use null so classify knows to ignore
-    enriched[i].rel  = rs  ? (+rs.value  || null) : null;
-    enriched[i].comp = cs  ? (+cs.value  || null) : null;
-    enriched[i].prod = ps  ? (+ps.value  || null) : null;
+    if(rs) enriched[i].rel=+rs.value;
+    if(cs) enriched[i].comp=+cs.value;
+    if(ps) enriched[i].prod=+ps.value;
   });
 }
 
@@ -685,26 +685,18 @@ function cagrCalc(y1,y3,yrs){if(!y1||!y3||y1<=0)return null;return(Math.pow(y3/y
 
 function classify(cagr,rel,comp,prod){
   if(cagr===null)return'unknown';
-  // Only use ratings if they were provided (non-null)
-  var hasRel=rel!==null&&rel>0;
-  var hasComp=comp!==null&&comp>0;
-  var hasProd=prod!==null&&prod>0;
-  if(hasComp&&hasRel&&comp>=4&&rel<=2)return'protect';
-  if(hasComp&&comp>=4&&cagr<5)return'protect';
-  if(hasRel&&hasProd&&rel>=4&&prod<=2)return'explore';
-  if(cagr>12&&(!hasComp||comp<=3))return'grow';
-  if(cagr>8&&hasRel&&rel>=4&&(!hasComp||comp<=3))return'grow';
-  if(cagr>8&&!hasRel&&!hasComp)return'grow';
-  if(cagr<0)return(hasComp&&comp>=3)?'protect':'hold';
-  if(hasProd&&prod>=4&&cagr<8)return'hold';
-  if(cagr>=5&&cagr<=8)return'hold';
-  return'grow';
+  if(comp>=4&&rel<=2)return'protect';
+  if(comp>=4&&cagr<5)return'protect';
+  if(rel>=4&&prod<=2)return'explore';
+  if(cagr>12&&comp<=3)return'grow';
+  if(cagr>8&&rel>=4&&comp<=3)return'grow';
+  if(cagr<0)return comp>=3?'protect':'hold';
+  if(prod>=4&&cagr<8)return'hold';
+  return'hold';
 }
 
 function riskInfo(comp,rel){
-  if(!comp&&!rel)return['Risk: unknown','var(--mt)'];
-  var c=comp||3, r=rel||3;
-  var s=c-(r*0.5);
+  var s=comp-(rel*0.5);
   if(s>3)return['High risk','var(--rd)'];
   if(s>1.5)return['Med risk','var(--am)'];
   return['Low risk','var(--gn)'];
@@ -807,31 +799,18 @@ function renderPriorities(){
   });
   document.getElementById('pri-list').innerHTML=html;
   var cc={grow:'#00a86b',protect:'#e53e3e',hold:'#d97706',explore:'#2563eb',unknown:'#6b7094'};
-  var allVals=computed.map(function(a){return Math.max(a.naturalFY27,a.desiredFY27)});
-  var maxR=Math.max.apply(null,allVals.concat([1]));
-  var barsHTML=computed.map(function(a){
-    var natW=Math.max(1,Math.round(a.naturalFY27/maxR*100));
-    var desW=Math.max(1,Math.round(a.desiredFY27/maxR*100));
-    var acColor=cc[a.cls]||'#6b7094';
-    return'<div style="margin-bottom:10px">'+
-      '<div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:4px">'+a.name+'</div>'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'+
-      '<div style="width:80px;font-size:10px;color:var(--mt);font-weight:500;flex-shrink:0">Natural</div>'+
-      '<div style="flex:1;height:10px;background:var(--sf2);border-radius:5px;overflow:hidden;border:1px solid var(--bd)">'+
-      '<div style="width:'+natW+'%;height:100%;background:#00a86b;border-radius:5px;transition:width .5s"></div></div>'+
-      '<div style="width:65px;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600;color:#00a86b;text-align:right;flex-shrink:0">'+fmtV(a.naturalFY27)+'</div></div>'+
-      '<div style="display:flex;align-items:center;gap:8px">'+
-      '<div style="width:80px;font-size:10px;color:var(--mt);font-weight:500;flex-shrink:0">Desired</div>'+
-      '<div style="flex:1;height:10px;background:var(--sf2);border-radius:5px;overflow:hidden;border:1px solid var(--bd)">'+
-      '<div style="width:'+desW+'%;height:100%;background:'+acColor+';border-radius:5px;transition:width .5s"></div></div>'+
-      '<div style="width:65px;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600;color:'+acColor+';text-align:right;flex-shrink:0">'+fmtV(a.desiredFY27)+'</div></div>'+
-      '</div>';
-  }).join('');
-  document.getElementById('pri-bars').innerHTML=barsHTML+
-    '<div style="font-size:11px;color:var(--mt);margin-top:8px;display:flex;gap:16px;padding-top:8px;border-top:1px solid var(--bd)">'+
-    '<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:6px;background:#00a86b;border-radius:3px;display:inline-block"></span>Natural CAGR target</span>'+
-    '<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:6px;background:var(--bl);border-radius:3px;display:inline-block"></span>Desired target (colour = account strategy)</span>'+
-    '</div>';
+  var maxR=Math.max.apply(null,computed.map(function(a){return a.desiredFY27}).concat([1]));
+  document.getElementById('pri-bars').innerHTML=computed.map(function(a){
+    return'<div class="bar-row"><div class="bl2" title="'+a.name+'">'+a.name+'</div>'+
+      '<div style="flex:1;display:flex;flex-direction:column;gap:3px">'+
+      '<div class="bt" style="height:5px"><div class="bf" style="width:'+Math.round(a.naturalFY27/maxR*100)+'%;background:var(--gn)"></div></div>'+
+      '<div class="bt" style="height:5px"><div class="bf" style="width:'+Math.round(a.desiredFY27/maxR*100)+'%;background:'+(cc[a.cls]||'#6b7094')+'"></div></div>'+
+      '</div><div class="bv">'+fmtV(a.desiredFY27)+'</div></div>';
+  }).join('')+
+  '<div style="font-size:11px;color:var(--mt);margin-top:6px;display:flex;gap:16px">'+
+  '<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:4px;background:var(--gn);border-radius:2px;display:inline-block"></span>Natural CAGR</span>'+
+  '<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:4px;background:var(--bl);border-radius:2px;display:inline-block"></span>Desired target</span>'+
+  '</div>';
 }
 
 // ────────────────────────────────────────────────────────
@@ -856,16 +835,11 @@ function renderMonthly(){
   var futSum=futSW.reduce(function(s,v){return s+v},0);
   var adjFut=futSW.map(function(w){return futSum>0?(w/futSum)*remaining:0});
 
-  // Adjust for natural too — remaining natural target after YTD
-  var ytdNat=mNat.slice(0,curFM-1).reduce(function(s,v){return s+v},0);
-  var remainingNat=totalNat-achiev;
-  var adjNatFut=futSW.map(function(w){return futSum>0?(w/futSum)*remainingNat:0});
-
-  function makeGrid(elId, baseTargets, adjTargets){
+  function makeGrid(elId, baseTargets, useAdj){
     var html='';
     for(var m=0;m<12;m++){
       var isPast=m<curFM-1, isCur=m===curFM-1;
-      var t=(achiev>0&&!isPast&&adjTargets)?adjTargets[m-(curFM-1)]:baseTargets[m];
+      var t=useAdj&&!isPast?adjFut[m-(curFM-1)]:baseTargets[m];
       var qCls=Q_BORDER[FY_Q[m]];
       var cls=(isPast?'past ':isCur?'cur ':'')+qCls;
       html+='<div class="mc '+cls+'">'+
@@ -875,8 +849,8 @@ function renderMonthly(){
     }
     document.getElementById(elId).innerHTML=html;
   }
-  makeGrid('fy-grid-natural',mNat,adjNatFut);
-  makeGrid('fy-grid-desired',mDes,adjFut);
+  makeGrid('fy-grid-natural',mNat,false);
+  makeGrid('fy-grid-desired',mDes,true);
 
   // Populate account select
   var sel=document.getElementById('acc-select');
@@ -916,40 +890,21 @@ function renderAccountMonthly(){
   if(idx===''){el.innerHTML='<div style="font-size:13px;color:var(--mt);padding:8px 0">Select an account above to see its monthly breakdown.</div>';return}
   var a=computed[+idx];
   if(!a){el.innerHTML='';return}
-  var curFM=Math.min(Math.max(+document.getElementById('cur-fm').value||1,1),12);
-  var achiev=+document.getElementById('fy-achieved').value||0;
-  // Account's share of total portfolio (used to split YTD achieved)
-  var totalNat=computed.reduce(function(s,c){return s+c.naturalFY27},0);
-  var totalDes=computed.reduce(function(s,c){return s+c.desiredFY27},0);
-  var accNatShare=totalNat>0?a.naturalFY27/totalNat:1/computed.length;
-  var accDesShare=totalDes>0?a.desiredFY27/totalDes:1/computed.length;
-  var accAchiev=achiev*accNatShare; // approximate account-level YTD
-  // Full year monthly breakdown
   var natMonthly=a.sw.map(function(w){return w*a.naturalFY27});
   var desMonthly=a.sw.map(function(w){return w*a.desiredFY27});
-  // Adjusted future months
-  var futSW=a.sw.slice(curFM-1);
-  var futSum=futSW.reduce(function(s,v){return s+v},0);
-  var remNat=a.naturalFY27-accAchiev;
-  var remDes=a.desiredFY27-(achiev*accDesShare);
-  var adjNat=futSW.map(function(w){return futSum>0?(w/futSum)*remNat:0});
-  var adjDes=futSW.map(function(w){return futSum>0?(w/futSum)*remDes:0});
-
-  function makeAccGrid(targets, adjTargets, color, label){
-    var html='<div style="font-size:12px;font-weight:600;color:var(--mt);margin-bottom:6px">'+a.name+' — '+label+'</div><div class="fy-grid" style="margin-bottom:10px">';
-    for(var m=0;m<12;m++){
-      var isPast=m<curFM-1,isCur=m===curFM-1;
-      var t=(achiev>0&&!isPast&&adjTargets)?adjTargets[m-(curFM-1)]:targets[m];
-      var qCls=Q_BORDER[FY_Q[m]];
-      var cls=(isPast?'past ':isCur?'cur ':'')+qCls;
-      html+='<div class="mc '+cls+'"><div class="mn">'+FY_MONTHS[m]+'</div>'+
-        '<div class="mt2" style="font-size:12px;color:'+(isPast?'var(--mt)':color)+'">'+fmtShort(t)+'</div>'+
-        '<div class="mq">Q'+(FY_Q[m]+1)+'</div></div>';
-    }
-    return html+'</div>';
+  var html='<div style="font-size:12px;font-weight:600;color:var(--mt);margin-bottom:6px">'+a.name+' — Natural FY27 monthly</div>'+
+    '<div class="fy-grid" style="margin-bottom:10px">';
+  for(var m=0;m<12;m++){
+    var qCls=Q_BORDER[FY_Q[m]];
+    html+='<div class="mc '+qCls+'"><div class="mn">'+FY_MONTHS[m]+'</div><div class="mt2" style="font-size:12px;color:var(--gn)">'+fmtShort(natMonthly[m])+'</div><div class="mq">Q'+(FY_Q[m]+1)+'</div></div>';
   }
-  el.innerHTML=makeAccGrid(natMonthly,adjNat,'var(--gn)','Natural CAGR targets')+
-               makeAccGrid(desMonthly,adjDes,'var(--am)','Desired targets');
+  html+='</div><div style="font-size:12px;font-weight:600;color:var(--mt);margin-bottom:6px">'+a.name+' — Desired FY27 monthly</div><div class="fy-grid">';
+  for(var m=0;m<12;m++){
+    var qCls=Q_BORDER[FY_Q[m]];
+    html+='<div class="mc '+qCls+'"><div class="mn">'+FY_MONTHS[m]+'</div><div class="mt2" style="font-size:12px;color:var(--am)">'+fmtShort(desMonthly[m])+'</div><div class="mq">Q'+(FY_Q[m]+1)+'</div></div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
 }
 
 // ────────────────────────────────────────────────────────
@@ -1003,101 +958,35 @@ function updateSim(){
 }
 
 // ────────────────────────────────────────────────────────
-// STEP 7 — INSIGHTS (data-driven, not advice)
+// STEP 7 — INSIGHTS (crisp + exec summary)
 // ────────────────────────────────────────────────────────
 function renderInsights(){
   var totalFY26=computed.reduce(function(s,a){return s+a.fy26},0);
-  var totalFY25=computed.reduce(function(s,a){return s+a.fy25},0);
   var totalNat=computed.reduce(function(s,a){return s+a.naturalFY27},0);
   var totalDes=computed.reduce(function(s,a){return s+a.desiredFY27},0);
   var gap=totalDes-totalNat;
+  var atRisk=computed.filter(function(a){return a.comp>=4&&a.rel<=2});
+  var pushA=computed.filter(function(a){return a.cls==='grow'});
+  var expA=computed.filter(function(a){return a.cls==='explore'});
   var natGrowth=totalFY26>0?((totalNat-totalFY26)/totalFY26*100):0;
   var desGrowth=totalFY26>0?((totalDes-totalFY26)/totalFY26*100):0;
 
-  // ── DATA SIGNALS ─────────────────────────────────────
-  // 1. Concentration: top account as % of portfolio
-  var sorted_by_rev=computed.slice().sort(function(a,b){return b.fy26-a.fy26});
-  var top1=sorted_by_rev[0];
-  var top1pct=totalFY26>0?(top1.fy26/totalFY26*100):0;
-  var top2pct=sorted_by_rev.length>1?((top1.fy26+(sorted_by_rev[1]?sorted_by_rev[1].fy26:0))/totalFY26*100):top1pct;
+  // Executive summary
+  var execBullets=[];
+  execBullets.push({col:'#00e5a0',icon:'↑',text:'Natural CAGR will take you to '+fmtV(totalNat)+' in FY27 ('+natGrowth.toFixed(1)+'% growth). You need '+fmtV(gap)+' more to hit your desired target.'});
+  if(pushA.length) execBullets.push({col:'#4d9fff',icon:'→',text:pushA.map(function(a){return a.name}).join(' + ')+' are your growth engines. Push these accounts hardest.'});
+  if(expA.length)  execBullets.push({col:'#c4b5fd',icon:'→',text:expA.map(function(a){return a.name}).join(' + ')+' have untapped cross-sell potential. One meeting = 20-30% upside.'});
+  if(atRisk.length)execBullets.push({col:'#ff6b6b',icon:'!',text:atRisk.map(function(a){return a.name}).join(', ')+' at competitor risk. Losing these reverses all growth. Act now.'});
+  execBullets.push({col:'#fbbf24',icon:'→',text:'Spend 50% of client time on top 2–3 accounts. Equal effort across all accounts = average results across all accounts.'});
 
-  // 2. Accounts shrinking (negative CAGR)
-  var declining=computed.filter(function(a){return a.cagr!==null&&a.cagr<0});
-  var decRev=declining.reduce(function(s,a){return s+a.fy26},0);
-
-  // 3. Gap accounts — desired much higher than natural
-  var gapAccs=computed.filter(function(a){return(a.desiredFY27-a.naturalFY27)>a.naturalFY27*0.15});
-
-  // 4. Accounts with fast CAGR but also high comp risk
-  var highRiskHighGrowth=computed.filter(function(a){return a.cagr!==null&&a.cagr>10&&a.comp&&a.comp>=4});
-
-  // 5. Portfolio CAGR trend: FY24→FY25 vs FY25→FY26
-  var totFY24=computed.reduce(function(s,a){return s+a.fy24},0);
-  var growthFY24_25=totFY24>0?((totalFY25-totFY24)/totFY24*100):0;
-  var growthFY25_26=totalFY25>0?((totalFY26-totalFY25)/totalFY25*100):0;
-  var momentumDir=growthFY25_26>growthFY24_25?'accelerating':'decelerating';
-
-  // 6. Accounts where natural FY27 > desired (over-achieving naturally)
-  var naturalBeaters=computed.filter(function(a){return a.naturalFY27>a.desiredFY27*1.02});
-
-  // ── EXEC SUMMARY ─────────────────────────────────────
-  var signals=[];
-
-  // Concentration risk
-  if(top1pct>40){
-    signals.push({col:'#ff6b6b',icon:'!',
-      text:'Concentration risk: '+top1.name+' is '+top1pct.toFixed(0)+'% of your FY26 portfolio ('+fmtV(top1.fy26)+'). Any loss or slowdown here hits your total harder than any other account.'});
-  } else if(top2pct>55){
-    signals.push({col:'#fbbf24',icon:'!',
-      text:'Two accounts ('+sorted_by_rev[0].name+' + '+(sorted_by_rev[1]?sorted_by_rev[1].name:'')+')'+ ' make up '+top2pct.toFixed(0)+'% of portfolio. Your FY27 result depends heavily on just these two.'});
-  }
-
-  // Declining accounts
-  if(declining.length>0){
-    signals.push({col:'#ff6b6b',icon:'↓',
-      text:declining.length+' account'+(declining.length>1?'s are':' is')+' declining: '+declining.map(function(a){return a.name+' ('+a.cagr.toFixed(1)+'% CAGR)'}).join(', ')+
-      '. Combined FY26 revenue: '+fmtV(decRev)+'. If the trend continues, FY27 natural drops by '+fmtV(declining.reduce(function(s,a){return s+(a.fy26-a.naturalFY27)},0))+' from these alone.'});
-  }
-
-  // Momentum direction
-  signals.push({col:momentumDir==='accelerating'?'#00e5a0':'#fbbf24',icon:momentumDir==='accelerating'?'↑':'↓',
-    text:'Portfolio momentum is '+momentumDir+'. FY24→FY25 growth was '+growthFY24_25.toFixed(1)+'%, FY25→FY26 was '+growthFY25_26.toFixed(1)+'%. '+(momentumDir==='decelerating'?'Growth is slowing — your FY27 desired target assumes re-acceleration.':'Growth is speeding up — momentum is on your side for FY27.')});
-
-  // Gap between natural and desired — who carries the burden
-  if(gapAccs.length>0){
-    var gapBurden=gapAccs.map(function(a){return a.name+' (needs +'+fmtV(a.desiredFY27-a.naturalFY27)+' above trend)'}).join(', ');
-    signals.push({col:'#c4b5fd',icon:'→',
-      text:'Your desired target requires '+fmtV(gap)+' above natural CAGR. Accounts carrying this extra burden: '+gapBurden+'. These accounts need active effort — natural momentum alone won't get there.'});
-  }
-
-  // High growth but also high competitor risk
-  if(highRiskHighGrowth.length>0){
-    signals.push({col:'#fbbf24',icon:'!',
-      text:'Watch: '+highRiskHighGrowth.map(function(a){return a.name}).join(', ')+' show strong CAGR ('+highRiskHighGrowth.map(function(a){return a.cagr.toFixed(1)+'%'}).join(', ')+') but also high competitor risk. Growth numbers may reflect competitor pricing or a temporary situation — not a stable trend.'});
-  }
-
-  // Accounts naturally beating desired target
-  if(naturalBeaters.length>0){
-    signals.push({col:'#00e5a0',icon:'↑',
-      text:naturalBeaters.map(function(a){return a.name}).join(', ')+' will likely exceed their desired target on natural momentum alone. Consider raising their desired target — or reallocating that effort to accounts that actually need pushing.'});
-  }
-
-  // Gap feasibility
-  var pushAccs=computed.filter(function(a){return a.cls==='grow'||a.cls==='explore'});
-  var pushUplift=pushAccs.reduce(function(s,a){return s+(a.desiredFY27-a.naturalFY27)},0);
-  if(gap>0&&pushUplift<gap*0.6){
-    signals.push({col:'#ff6b6b',icon:'!',
-      text:'Gap feasibility concern: The '+fmtV(gap)+' gap to desired target cannot be covered by your current Push and Explore accounts alone (they can deliver ~'+fmtV(pushUplift)+'). Either lower desired growth, or identify new accounts.'});
-  }
-
-  var execHTML='<div class="exec-title">Portfolio data signals — what the numbers are telling you</div>'+
+  var execHTML='<div class="exec-title">Executive summary — FY27 outlook</div>'+
     '<div class="exec-grid">'+
-    '<div class="exec-metric"><div class="exec-ml">Natural FY27 growth</div><div class="exec-mv" style="color:#00e5a0">'+natGrowth.toFixed(1)+'%</div></div>'+
-    '<div class="exec-metric"><div class="exec-ml">Desired FY27 growth</div><div class="exec-mv" style="color:#fbbf24">'+desGrowth.toFixed(1)+'%</div></div>'+
-    '<div class="exec-metric"><div class="exec-ml">Extra effort needed</div><div class="exec-mv" style="color:#ff6b6b">'+fmtV(gap)+'</div></div>'+
+    '<div class="exec-metric"><div class="exec-ml">Natural FY27</div><div class="exec-mv" style="color:#00e5a0">'+fmtV(totalNat)+'</div></div>'+
+    '<div class="exec-metric"><div class="exec-ml">Desired FY27</div><div class="exec-mv" style="color:#fbbf24">'+fmtV(totalDes)+'</div></div>'+
+    '<div class="exec-metric"><div class="exec-ml">Gap to close</div><div class="exec-mv" style="color:#ff6b6b">'+fmtV(gap)+'</div></div>'+
     '</div>'+
     '<div class="exec-bullets">'+
-    signals.map(function(b){
+    execBullets.map(function(b){
       return'<div class="exec-bullet">'+
         '<div class="exec-icon" style="background:'+b.col+'20;color:'+b.col+'">'+b.icon+'</div>'+
         '<span>'+b.text+'</span></div>';
@@ -1105,41 +994,12 @@ function renderInsights(){
     '</div>';
   document.getElementById('exec-summary').innerHTML=execHTML;
 
-  // ── ACCOUNT SIGNALS ──────────────────────────────────
+  // Account insights — crisp 3 lines
   var ord={grow:0,explore:1,protect:2,hold:3,unknown:4};
-  var sortedAccs=computed.slice().sort(function(a,b){return(ord[a.cls]||4)-(ord[b.cls]||4)});
-
-  document.getElementById('acc-ins').innerHTML=sortedAccs.map(function(a){
+  var sorted=computed.slice().sort(function(a,b){return(ord[a.cls]||4)-(ord[b.cls]||4)});
+  document.getElementById('acc-ins').innerHTML=sorted.map(function(a){
     var s=STRAT[a.cls]||STRAT.unknown;
     var cs=a.cagr!==null?(a.cagr>=0?'+':'')+a.cagr.toFixed(1)+'%':'—';
-    // Per-account data signals
-    var accSignals=[];
-
-    // CAGR trend: FY24-25 vs FY25-26
-    var cagr_a=a.fy25>0?((a.fy26-a.fy25)/a.fy25*100):null;
-    var cagr_b=a.fy24>0?((a.fy25-a.fy24)/a.fy24*100):null;
-    if(cagr_a!==null&&cagr_b!==null){
-      if(cagr_a<cagr_b-5) accSignals.push('Growth rate slowing: was '+cagr_b.toFixed(1)+'% (FY24→FY25), now '+cagr_a.toFixed(1)+'% (FY25→FY26).');
-      else if(cagr_a>cagr_b+5) accSignals.push('Growth rate accelerating: was '+cagr_b.toFixed(1)+'% (FY24→FY25), now '+cagr_a.toFixed(1)+'% (FY25→FY26).');
-    }
-
-    // Revenue share
-    var share=totalFY26>0?(a.fy26/totalFY26*100):0;
-    accSignals.push('FY26 share of portfolio: '+share.toFixed(1)+'%.');
-
-    // Gap between natural and desired
-    var accGap=a.desiredFY27-a.naturalFY27;
-    if(Math.abs(accGap)>a.fy26*0.05){
-      accSignals.push('Needs '+fmtV(accGap)+' above natural CAGR to hit desired target — '+(accGap>0?'requires active effort.':'natural momentum already exceeds desired target.'));
-    }
-
-    // Seasonality pattern — which quarter is strongest
-    var qTotals=[0,0,0,0];
-    a.sw.forEach(function(w,m){qTotals[Math.floor(m/3)]+=w});
-    var maxQ=qTotals.indexOf(Math.max.apply(null,qTotals));
-    var qNames=['Q1 (Apr-Jun)','Q2 (Jul-Sep)','Q3 (Oct-Dec)','Q4 (Jan-Mar)'];
-    accSignals.push('Historically strongest quarter: '+qNames[maxQ]+' ('+Math.round(qTotals[maxQ]*100)+'% of annual revenue).');
-
     return'<div class="ins-item '+s.lc+'">'+
       '<div class="ins-hdr">'+
       '<span style="font-weight:700;font-size:14px">'+a.name+'</span>'+
@@ -1147,15 +1007,13 @@ function renderInsights(){
       '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.05);color:'+a.riskCol+';font-weight:600;margin-left:auto">'+a.riskLabel+'</span>'+
       '<span class="mono" style="font-size:11px;color:var(--mt)">FY26: '+fmtV(a.fy26)+' · '+cs+' CAGR</span>'+
       '</div>'+
-      '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">'+
-      accSignals.map(function(sig){
-        return'<div style="font-size:12px;color:var(--tx);line-height:1.5;display:flex;gap:7px"><span style="color:var(--bl);flex-shrink:0;margin-top:2px">◆</span><span>'+sig+'</span></div>';
-      }).join('')+
-      '</div>'+
-      '<div style="display:flex;gap:14px;padding-top:8px;border-top:1px solid var(--bd);font-size:11px;font-weight:500">'+
+      '<div class="ins-row"><span class="ins-key">Problem</span><span class="ins-val">'+s.issue+'</span></div>'+
+      '<div class="ins-row"><span class="ins-key">Fix</span><span class="ins-val">'+s.fix+'</span></div>'+
+      '<div class="ins-row"><span class="ins-key">Focus</span><span class="ins-val">'+s.focus+'</span></div>'+
+      '<div style="display:flex;gap:16px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd);font-size:11px;font-weight:500">'+
       '<span>Natural FY27: <span class="mono" style="color:var(--gn)">'+fmtV(a.naturalFY27)+'</span></span>'+
       '<span>Desired FY27: <span class="mono" style="color:var(--am)">'+fmtV(a.desiredFY27)+'</span></span>'+
-      '<span>Gap: <span class="mono" style="color:'+(accGap>0?'var(--rd)':'var(--gn)')+'">'+fmtV(accGap)+'</span></span>'+
+      '<span>Gap: <span class="mono" style="color:var(--rd)">'+fmtV(a.desiredFY27-a.naturalFY27)+'</span></span>'+
       '</div></div>';
   }).join('');
 }
