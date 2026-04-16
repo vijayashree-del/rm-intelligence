@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RM Account Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f6fa;--sf:#ffffff;--sf2:#f0f1f7;--bd:#e2e4ed;
+  --tx:#1a1b2e;--mt:#6b7094;--sb:#e8eaf2;
+  --gn:#00a86b;--gd:#e6f7f1;
+  --rd:#e53e3e;--rdd:#fff0f0;
+  --am:#d97706;--amd:#fff8e6;
+  --bl:#2563eb;--bld:#eff4ff;
+  --pu:#7c3aed;--pud:#f5f0ff;
+  --r:10px;--rl:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.5}
+.app{max-width:1000px;margin:0 auto;padding:2rem 1.5rem}
+
+/* HEADER */
+.header{background:var(--sf);border-radius:var(--rl);padding:1.25rem 1.5rem;margin-bottom:1.25rem;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.header-title{font-size:20px;font-weight:700;color:var(--tx);letter-spacing:-.02em}
+.header-sub{font-size:12px;color:var(--mt);margin-top:2px}
+.fy-badge{background:var(--bld);color:var(--bl);font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;border:1px solid #bfdbfe}
+
+/* STEPS */
+.steps-wrap{background:var(--sf);border-radius:var(--rl);padding:6px;margin-bottom:1.25rem;box-shadow:var(--shadow);display:flex;gap:4px;overflow-x:auto}
+.step{padding:8px 16px;border-radius:8px;border:none;background:transparent;color:var(--mt);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:.15s;flex-shrink:0;display:flex;align-items:center;gap:6px}
+.step:hover{background:var(--sf2);color:var(--tx)}
+.step.active{background:var(--bl);color:#fff}
+.step.done{color:var(--gn)}
+.step-num{width:20px;height:20px;border-radius:50%;background:currentColor;opacity:.2;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step.active .step-num{opacity:.4}
+.panel{display:none}.panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.ct{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--mt);margin-bottom:12px}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+
+/* METRICS */
+.metric{background:var(--sf2);border-radius:var(--r);padding:14px;border:1px solid var(--bd)}
+.ml{font-size:11px;color:var(--mt);margin-bottom:4px;font-weight:500}
+.mv{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:-.02em}
+.ms{font-size:11px;color:var(--mt);margin-top:2px}
+
+/* INPUTS */
+input,select,textarea{background:var(--sf);border:1.5px solid var(--bd);border-radius:8px;color:var(--tx);font-family:'Inter',sans-serif;font-size:13px;padding:8px 10px;width:100%;outline:none;transition:.15s}
+input:focus,select:focus{border-color:var(--bl);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+select option{background:var(--sf)}
+label{font-size:12px;color:var(--mt);display:block;margin-bottom:5px;font-weight:500}
+.field{margin-bottom:12px}
+
+/* BUTTONS */
+.btn{background:var(--bl);color:#fff;border:none;border-radius:var(--r);padding:10px 22px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:#1d4ed8}
+.btn-outline{background:var(--sf);border:1.5px solid var(--bd);color:var(--mt);border-radius:8px;padding:8px 16px;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
+.btn-outline:hover{border-color:var(--bl);color:var(--bl)}
+.btn-green{background:var(--gn);color:#fff;border:none;border-radius:var(--r);padding:10px 22px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-green:hover{opacity:.88}
+.btn-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--bd);border-radius:var(--rl);padding:2.5rem;text-align:center;cursor:pointer;background:var(--sf2);transition:.2s}
+.upload-zone:hover,.upload-zone.ok{border-color:var(--bl);background:var(--bld)}
+.upload-zone.ok{border-color:var(--gn);background:var(--gd)}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;margin-bottom:8px}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;color:var(--mt);font-weight:600;text-align:left;padding:8px 10px;border-bottom:2px solid var(--bd);white-space:nowrap;background:var(--sf2)}
+td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid var(--bd);font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--sf2)}
+td input{padding:5px 7px;font-size:12px;border-radius:6px;border-width:1px}
+td input[type=number]{width:80px}
+td input[type=text]{width:120px}
+td select{padding:4px 6px;font-size:12px;border-radius:6px;width:70px;border-width:1px}
+
+/* BADGES */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.03em}
+.bg{background:var(--gd);color:var(--gn);border:1px solid #bbf7d0}
+.bp{background:var(--rdd);color:var(--rd);border:1px solid #fecaca}
+.bh{background:var(--amd);color:var(--am);border:1px solid #fde68a}
+.be{background:var(--bld);color:var(--bl);border:1px solid #bfdbfe}
+.bu{background:var(--sf2);color:var(--mt);border:1px solid var(--bd)}
+
+/* BARS */
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bl2{font-size:12px;color:var(--mt);width:120px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.bt{flex:1;height:8px;background:var(--sf2);border-radius:4px;overflow:hidden;border:1px solid var(--bd)}
+.bf{height:100%;border-radius:4px;transition:width .6s}
+.bv{font-size:12px;font-family:'JetBrains Mono',monospace;width:65px;text-align:right;flex-shrink:0;color:var(--tx);font-weight:500}
+
+/* MONTH GRID */
+.fy-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:6px}
+.mc{background:var(--sf);border-radius:8px;padding:10px 8px;border:1.5px solid var(--bd);text-align:center;transition:.15s}
+.mc.cur{border-color:var(--bl);background:var(--bld)}
+.mc.past{opacity:.45;background:var(--sf2)}
+.mc.q1b{border-top:3px solid var(--bl)}
+.mc.q2b{border-top:3px solid var(--gn)}
+.mc.q3b{border-top:3px solid var(--am)}
+.mc.q4b{border-top:3px solid var(--rd)}
+.mn{font-size:10px;color:var(--mt);margin-bottom:3px;font-weight:600}
+.mt2{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--tx)}
+.mq{font-size:9px;color:var(--mt);margin-top:2px}
+
+/* ROWS */
+.rr{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.rr:last-child{border-bottom:none}
+
+/* WARN / INFO */
+.warn{background:var(--amd);border:1px solid #fde68a;border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--am);margin-bottom:8px;font-weight:500}
+.info{background:var(--bld);border:1px solid #bfdbfe;border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--bl);margin-bottom:8px}
+.danger{background:var(--rdd);border:1px solid #fecaca;border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--rd);margin-bottom:8px;font-weight:500}
+
+/* INSIGHTS */
+.exec-summary{background:linear-gradient(135deg,#1a1b2e 0%,#2d2f5e 100%);border-radius:var(--rl);padding:1.5rem;margin-bottom:1rem;color:#fff}
+.exec-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+.exec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.exec-metric{background:rgba(255,255,255,.08);border-radius:8px;padding:12px}
+.exec-ml{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:3px}
+.exec-mv{font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.exec-bullets{display:flex;flex-direction:column;gap:6px}
+.exec-bullet{display:flex;gap:10px;font-size:13px;color:rgba(255,255,255,.85);line-height:1.5}
+.exec-icon{flex-shrink:0;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px}
+
+.ins-item{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:14px;margin-bottom:8px;border-left:4px solid var(--bd);box-shadow:var(--shadow)}
+.ins-item.ig{border-left-color:var(--gn)}
+.ins-item.ip{border-left-color:var(--rd)}
+.ins-item.ie{border-left-color:var(--bl)}
+.ins-item.ih{border-left-color:var(--am)}
+.ins-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ins-row{display:flex;gap:8px;margin-bottom:5px;font-size:12px;align-items:flex-start}
+.ins-key{color:var(--mt);width:70px;flex-shrink:0;font-weight:600;padding-top:1px}
+.ins-val{color:var(--tx);line-height:1.5}
+
+/* ENRICH */
+.lw-row{display:grid;grid-template-columns:150px 90px 90px auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
+.lw-row:last-child{border-bottom:none}
+.lw-head{display:grid;grid-template-columns:150px 90px 90px auto;gap:10px;margin-bottom:6px}
+.lw-head span{font-size:11px;color:var(--mt);font-weight:600}
+.lw-name{font-size:13px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* SIM */
+.sim-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sim-lbl{font-size:12px;color:var(--mt);width:150px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.sim-pct{font-size:12px;font-family:'JetBrains Mono',monospace;font-weight:600;width:48px;text-align:right;flex-shrink:0}
+input[type=range]{accent-color:var(--bl);cursor:pointer;flex:1}
+
+/* UNIT TOGGLE */
+.unit-toggle{display:flex;gap:4px;background:var(--sf2);border-radius:8px;padding:3px;border:1px solid var(--bd)}
+.unit-btn{padding:4px 12px;border-radius:6px;border:none;background:transparent;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;color:var(--mt);transition:.15s}
+.unit-btn.active{background:var(--sf);color:var(--bl);box-shadow:var(--shadow);font-weight:600}
+
+/* MISC */
+.tip{font-size:11px;color:var(--mt);margin-top:6px;line-height:1.5}
+.mono{font-family:'JetBrains Mono',monospace;font-weight:500}
+.sep{height:1px;background:var(--bd);margin:14px 0}
+.optional-tag{font-size:10px;color:var(--mt);background:var(--sf2);border:1px solid var(--bd);border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:400}
+.optional-fields{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);padding:12px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <div>
+    <div class="header-title">RM Account Intelligence</div>
+    <div class="header-sub">Indian Financial Year · CAGR-based targets · Seasonality-driven monthly plans</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="unit-toggle">
+      <button class="unit-btn active" onclick="setUnit('L')">₹ Lakhs</button>
+      <button class="unit-btn" onclick="setUnit('K')">₹ 000s (K)</button>
+      <button class="unit-btn" onclick="setUnit('Cr')">₹ Crores</button>
+      <button class="unit-btn" onclick="setUnit('N')">Numbers</button>
+    </div>
+    <span class="fy-badge">FY27 Forecast (Apr 26 – Mar 27)</span>
+  </div>
+</div>
+
+<div class="steps-wrap">
+  <button class="step active" id="st-upload"   onclick="goStep('upload')">1. Upload data</button>
+  <button class="step"        id="st-enrich"   onclick="goStep('enrich')">2. Account details</button>
+  <button class="step"        id="st-targets"  onclick="tryGoTargets()">3. Set targets</button>
+  <button class="step"        id="st-priority" onclick="goStep('priority')">4. Priorities</button>
+  <button class="step"        id="st-monthly"  onclick="goStep('monthly')">5. Monthly plan</button>
+  <button class="step"        id="st-sim"      onclick="goStep('sim')">6. Simulator</button>
+  <button class="step"        id="st-insights" onclick="goStep('insights')">7. Insights</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 1 — UPLOAD
+══════════════════════════════════════════ -->
+<div class="panel active" id="pn-upload">
+  <div class="card">
+    <div class="ct">Upload accounts CSV</div>
+    <div class="upload-zone" id="uz"
+      onclick="document.getElementById('csv-inp').click()"
+      ondragover="event.preventDefault()"
+      ondrop="handleDrop(event)">
+      <div style="font-size:36px;margin-bottom:10px">📂</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:5px;color:var(--tx)" id="uz-title">Drop CSV or click to browse</div>
+      <div style="font-size:12px;color:var(--mt)">Monthly revenue per account · FY24, FY25, FY26 · Forecasts FY27 (Apr 26 – Mar 27)</div>
+      <div style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button onclick="event.stopPropagation();dlTemplate('monthly')" class="btn-outline" style="font-size:12px">Download monthly template →</button>
+        <button onclick="event.stopPropagation();dlTemplate('quarterly')" class="btn-outline" style="font-size:12px">Download quarterly template →</button>
+      </div>
+    </div>
+    <input type="file" id="csv-inp" accept=".csv" style="display:none" onchange="handleFile(this)">
+    <p class="tip" style="margin-top:10px">Monthly template: Account name + 36 monthly columns (Apr-23 to Mar-26 = FY24, FY25, FY26). Quarterly template: Account + 12 quarterly columns. Revenue in any unit — use the toggle above to switch display.</p>
+  </div>
+  <div class="card" id="preview-card" style="display:none">
+    <div class="ct">Preview — <span id="preview-count"></span> accounts loaded</div>
+    <div class="tbl-wrap"><table id="preview-table"></table></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="upload-next-btn" style="display:none" onclick="goStep('enrich')">Next: add account details →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 2 — ENRICH
+══════════════════════════════════════════ -->
+<div class="panel" id="pn-enrich">
+  <div class="card">
+    <div class="ct">Account details</div>
+    <p style="font-size:13px;color:var(--mt);margin-bottom:14px;line-height:1.6">
+      Relationship, Competitor risk, and Products are <strong>optional</strong>. Leave them blank to skip — the tool will classify using CAGR data alone. Only fill in what you actually know.
+    </p>
+    <div class="lw-head">
+      <span>Account</span>
+      <span>3yr CAGR</span>
+      <span>FY26 revenue</span>
+      <span>Optional: Relationship · Comp. risk · Products (1–5)</span>
+    </div>
+    <div id="enrich-list"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-outline" onclick="goStep('upload')">← Back</button>
+    <button class="btn" onclick="tryGoTargets()">Next: set targets →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 3 — TARGETS
+══════════════════════════════════════════ -->
+<div class="panel" id="pn-targets">
+  <div class="card">
+    <div class="ct">Industry / sector</div>
+    <div style="max-width:320px">
+      <div class="field"><label>Your industry (optional — used in insights)</label>
+        <input type="text" id="rm-industry" placeholder="e.g. Banking, Insurance, SaaS">
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">FY27 target setting — Apr 2026 to Mar 2027</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div style="background:var(--gd);border:1px solid #bbf7d0;border-radius:var(--r);padding:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--gn);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Natural CAGR projection</div>
+        <div style="font-size:12px;color:var(--mt);margin-bottom:10px;line-height:1.5">If each account just continues its current 3-year growth trend — no extra effort.</div>
+        <div style="font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--gn)" id="natural-total">—</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">FY27 natural projection</div>
+      </div>
+      <div style="background:var(--amd);border:1px solid #fde68a;border-radius:var(--r);padding:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--am);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Desired growth on top of CAGR</div>
+        <div style="font-size:12px;color:var(--mt);margin-bottom:10px;line-height:1.5">How much more % do you want to grow <em>on top of</em> natural CAGR? Set 0% to use CAGR as target.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <input type="number" id="desired-pct" value="20" min="0" max="200" style="width:80px" oninput="recalcTargets()">
+          <span style="font-size:13px;color:var(--mt)">% extra</span>
+        </div>
+        <div style="font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--am)" id="desired-total">—</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">FY27 desired target</div>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div class="ct">Per-account targets — edit individual desired targets below</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Account</th>
+          <th>FY26 actual</th>
+          <th>3yr CAGR</th>
+          <th>Natural FY27</th>
+          <th>Desired FY27 (editable)</th>
+          <th>Gap to close</th>
+        </tr></thead>
+        <tbody id="target-table"></tbody>
+      </table>
+    </div>
+    <p class="tip">Desired FY27 column is editable — click any value to override. Changes update the total automatically.</p>
+  </div>
+  <div class="btn-row">
+    <button class="btn-outline" onclick="goStep('enrich')">← Back</button>
+    <button class="btn-green" onclick="computeFull()">Generate full analysis →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 4 — PRIORITIES
+══════════════════════════════════════════ -->
+<div class="panel" id="pn-priority">
+  <div class="g4" id="pri-metrics" style="margin-bottom:1rem"></div>
+  <div id="pri-warns"></div>
+  <div class="card"><div class="ct">Account priorities — FY27</div><div id="pri-list"></div></div>
+  <div class="card"><div class="ct">Revenue breakdown — Natural vs Desired FY27</div><div id="pri-bars"></div></div>
+  <div class="btn-row">
+    <button class="btn-outline" onclick="goStep('targets')">← Back</button>
+    <button class="btn" onclick="goStep('monthly')">View monthly plan →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 5 — MONTHLY PLAN
+══════════════════════════════════════════ -->
+<div class="panel" id="pn-monthly">
+  <div class="card">
+    <div class="ct">FY27 monthly targets — seasonality from FY24–FY26</div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="field"><label>Current month in FY27 (1=Apr 26 … 12=Mar 27)</label>
+        <input type="number" id="cur-fm" value="1" min="1" max="12" oninput="renderMonthly()">
+      </div>
+      <div class="field"><label>FY27 revenue achieved so far</label>
+        <input type="number" id="fy-achieved" value="0" min="0" oninput="renderMonthly()">
+      </div>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap;font-size:12px;font-weight:500">
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:4px;background:var(--bl);border-radius:2px;display:inline-block"></span>Q1 Apr-Jun</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:4px;background:var(--gn);border-radius:2px;display:inline-block"></span>Q2 Jul-Sep</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:4px;background:var(--am);border-radius:2px;display:inline-block"></span>Q3 Oct-Dec</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:4px;background:var(--rd);border-radius:2px;display:inline-block"></span>Q4 Jan-Mar</span>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--mt);margin-bottom:6px">↑ Natural CAGR targets per month (FY27)</div>
+    <div class="fy-grid" id="fy-grid-natural" style="margin-bottom:12px"></div>
+    <div style="font-size:12px;font-weight:600;color:var(--mt);margin-bottom:6px">↑ Desired targets per month (your ambition)</div>
+    <div class="fy-grid" id="fy-grid-desired" style="margin-bottom:16px"></div>
+    <div class="sep"></div>
+    <div style="font-size:12px;font-weight:600;color:var(--mt);margin-bottom:8px">↑ Monthly breakdown by account — select account</div>
+    <div style="margin-bottom:10px">
+      <select id="acc-select" onchange="renderAccountMonthly()" style="max-width:280px">
+        <option value="">— Select an account —</option>
+      </select>
+    </div>
+    <div id="acc-monthly-grid"></div>
+  </div>
+  <div class="card"><div class="ct">Recovery / acceleration plan</div><div id="recovery"></div></div>
+  <div class="btn-row">
+    <button class="btn-outline" onclick="goStep('priority')">← Back</button>
+    <button class="btn" onclick="goStep('sim')">Growth simulator →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 6 — SIMULATOR
+══════════════════════════════════════════ -->
+<div class="panel" id="pn-sim">
+  <div class="card">
+    <div class="ct">Growth simulator — what if you push harder?</div>
+    <p style="font-size:12px;color:var(--mt);margin-bottom:14px">Drag to model effort per account. Warnings fire when you make a risky move.</p>
+    <div id="sim-controls"></div>
+  </div>
+  <div class="g4" id="sim-metrics" style="margin-bottom:1rem"></div>
+  <div class="card"><div class="ct">Simulated vs targets</div><div id="sim-bars"></div></div>
+  <div id="sim-warns"></div>
+  <div class="btn-row">
+    <button class="btn-outline" onclick="goStep('monthly')">← Back</button>
+    <button class="btn" onclick="goStep('insights')">View insights →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STEP 7 — INSIGHTS
+══════════════════════════════════════════ -->
+<div class="panel" id="pn-insights">
+  <div class="exec-summary" id="exec-summary"></div>
+  <div class="card"><div class="ct">Account-level insights</div><div id="acc-ins"></div></div>
+  <div class="btn-row">
+    <button class="btn-outline" onclick="goStep('sim')">← Back</button>
+    <button class="btn" onclick="goStep('upload')">Start over</button>
+  </div>
+</div>
+
+</div><!-- end .app -->
+
+<script>
+// ────────────────────────────────────────────────────────
+// CONSTANTS
+// ────────────────────────────────────────────────────────
+var FY_MONTHS = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+var FY_Q      = [0,0,0,1,1,1,2,2,2,3,3,3];
+var Q_BORDER  = ['q1b','q2b','q3b','q4b'];
+var STEPS     = ['upload','enrich','targets','priority','monthly','sim','insights'];
+var currentUnit = 'L'; // L, K, Cr
+
+var STRAT = {
+  grow:    {label:'Push hard', bc:'bg', lc:'ig', col:'#00a86b',
+    issue:'Strong CAGR, low competitive threat.',
+    fix:'Book a growth review with client. Propose expanded scope.',
+    focus:'Put your best hours here. This account closes your gap.'},
+  explore: {label:'Explore', bc:'be', lc:'ie', col:'#2563eb',
+    issue:'Good relationship but only using some of your products.',
+    fix:'Schedule a portfolio mapping call. Ask: "What else are you buying elsewhere?"',
+    focus:'One cross-sell conversation this month = 20–30% upside.'},
+  protect: {label:'Protect', bc:'bp', lc:'ip', col:'#e53e3e',
+    issue:'Competitor is active or relationship is weak.',
+    fix:'Bring a senior stakeholder to the next meeting. No upsell pressure yet.',
+    focus:'Retention before revenue. Losing this account sets you back further than missing growth.'},
+  hold:    {label:'Maintain', bc:'bh', lc:'ih', col:'#d97706',
+    issue:'Account is stable but near its growth ceiling.',
+    fix:'Keep service quality high. Test one adjacent product.',
+    focus:'Limit time here. Reallocate hours to Push and Explore accounts.'},
+  unknown: {label:'Review', bc:'bu', lc:'', col:'#6b7094',
+    issue:'Not enough data to classify accurately.',
+    fix:'Run a relationship + product penetration check.',
+    focus:'Gather data before investing significant effort.'}
+};
+
+// ────────────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────────────
+var rawAccounts = [];
+var enriched    = [];
+var computed    = [];
+
+// ────────────────────────────────────────────────────────
+// UNIT FORMATTING
+// ────────────────────────────────────────────────────────
+function setUnit(u) {
+  currentUnit = u;
+  document.querySelectorAll('.unit-btn').forEach(function(b,i){
+    b.classList.toggle('active', ['L','K','Cr','N'][i] === u);
+  });
+  // re-render if data exists
+  if (computed.length) { recalcTargets(); renderPriorities(); renderMonthly(); renderSimulator(); renderInsights(); }
+  if (rawAccounts.length) renderPreview();
+}
+
+function fmtV(v) {
+  // v always stored in Lakhs internally
+  if (currentUnit === 'K') return (Math.round(v*10*10)/10).toLocaleString('en-IN') + 'K';
+  if (currentUnit === 'Cr') return (Math.round(v/100*100)/100).toFixed(2) + 'Cr';
+  if (currentUnit === 'N') return Math.round(v*100000).toLocaleString('en-IN');
+  return (Math.round(v*10)/10).toLocaleString('en-IN') + 'L';
+}
+
+function fmtShort(v) {
+  if (currentUnit === 'K') return Math.round(v*10).toLocaleString('en-IN') + 'K';
+  if (currentUnit === 'Cr') return (Math.round(v/100*10)/10).toFixed(1) + 'Cr';
+  if (currentUnit === 'N') return Math.round(v*100000).toLocaleString('en-IN');
+  return (Math.round(v*10)/10).toFixed(1) + 'L';
+}
+
+// Convert input value from current unit to Lakhs
+function toL(v) {
+  if (currentUnit === 'K') return v / 10;
+  if (currentUnit === 'Cr') return v * 100;
+  return v;
+}
+
+// ────────────────────────────────────────────────────────
+// NAVIGATION
+// ────────────────────────────────────────────────────────
+function goStep(name) {
+  STEPS.forEach(function(n) {
+    var st = document.getElementById('st-'+n);
+    var pn = document.getElementById('pn-'+n);
+    if (st) st.classList.toggle('active', n===name);
+    if (pn) pn.classList.toggle('active', n===name);
+  });
+  window.scrollTo(0,0);
+}
+
+function tryGoTargets() {
+  if (!rawAccounts.length) { alert('Please upload your accounts CSV first.'); return; }
+  syncEnrich();
+  computed = buildAccountMeta();
+  computed.forEach(function(a) {
+    a.cls = classify(a.cagr, a.rel, a.comp, a.prod);
+    var ri = riskInfo(a.comp, a.rel);
+    a.riskLabel = ri[0]; a.riskCol = ri[1];
+  });
+  recalcTargets();
+  renderTargetTable();
+  goStep('targets');
+}
+
+// ────────────────────────────────────────────────────────
+// TEMPLATE DOWNLOAD
+// ────────────────────────────────────────────────────────
+function dlTemplate(type) {
+  var mLabels = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+  // FY24=Apr23-Mar24, FY25=Apr24-Mar25, FY26=Apr25-Mar26
+  var fyDefs = [[23,24],[24,25],[25,26]];
+  var season = [72,74,78,82,84,88,92,90,96,88,84,82];
+
+  if (type === 'monthly') {
+    var cols = [];
+    fyDefs.forEach(function(fy) {
+      mLabels.forEach(function(m,i) {
+        var yr = i < 9 ? fy[0] : fy[1];
+        cols.push(m+'-'+yr);
+      });
+    });
+    var header = 'Account,' + cols.join(',');
+    function makeRow(name, base, growth) {
+      var vals = [];
+      for (var fy=0;fy<3;fy++) {
+        season.forEach(function(s) { vals.push(Math.round(base*(1+growth*fy)*s/82)); });
+      }
+      return name+','+vals.join(',');
+    }
+    var rows = [header,makeRow('Client Alpha',8,0.15),makeRow('Client Beta',5,0.08),makeRow('Client Gamma',12,0.22),makeRow('Client Delta',3,0.05),makeRow('Client Epsilon',6,0.18)];
+    triggerDownload(rows.join('\n'),'rm-monthly-template.csv');
+  } else {
+    // Quarterly
+    var qLabels = ['Q1 Apr-Jun','Q2 Jul-Sep','Q3 Oct-Dec','Q4 Jan-Mar'];
+    var qHeader = 'Account';
+    fyDefs.forEach(function(fy){ qLabels.forEach(function(q){ qHeader += ',FY'+(fy[0]+1)+'-'+q; }); });
+    // Q seasonal: 23%, 26%, 29%, 22%
+    var qS = [23,26,29,22];
+    function makeQRow(name,base,growth){
+      var vals=[];
+      for(var fy=0;fy<3;fy++){
+        qS.forEach(function(s){ vals.push(Math.round(base*(1+growth*fy)*s/100*12)); });
+      }
+      return name+','+vals.join(',');
+    }
+    var qRows=[qHeader,makeQRow('Client Alpha',8,0.15),makeQRow('Client Beta',5,0.08),makeQRow('Client Gamma',12,0.22),makeQRow('Client Delta',3,0.05),makeQRow('Client Epsilon',6,0.18)];
+    triggerDownload(qRows.join('\n'),'rm-quarterly-template.csv');
+  }
+}
+
+function triggerDownload(content, filename) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type:'text/csv'}));
+  a.download = filename; a.click();
+}
+
+// ────────────────────────────────────────────────────────
+// CSV UPLOAD & PARSE
+// ────────────────────────────────────────────────────────
+function handleDrop(e){e.preventDefault();if(e.dataTransfer.files[0])parseCSV(e.dataTransfer.files[0]);}
+function handleFile(inp){if(inp.files[0])parseCSV(inp.files[0]);}
+
+function parseCSV(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var lines = e.target.result.trim().split('\n').filter(function(l){return l.trim()});
+      if (lines.length < 2) { alert('CSV needs at least a header and one data row.'); return; }
+      var headers = lines[0].split(',').map(function(h){return h.trim()});
+      rawAccounts = [];
+      for (var i=1;i<lines.length;i++) {
+        var cells = lines[i].split(',').map(function(c){return c.trim()});
+        if (!cells[0]) continue;
+        var monthly = [];
+        // Check if quarterly (12 data cols) or monthly (36 data cols)
+        var dataCols = headers.length - 1;
+        if (dataCols <= 12) {
+          // Quarterly — expand each quarter to 3 equal months
+          for (var j=1;j<=12;j++) {
+            var qVal = parseFloat(cells[j]) || 0;
+            monthly.push(qVal/3); monthly.push(qVal/3); monthly.push(qVal/3);
+          }
+        } else {
+          for (var j=1;j<=36;j++) monthly.push(parseFloat(cells[j])||0);
+        }
+        while (monthly.length < 36) monthly.push(0);
+        rawAccounts.push({name:cells[0], monthly36:monthly});
+      }
+      enriched = rawAccounts.map(function(a){return{name:a.name,rel:3,comp:2,prod:3}});
+      renderPreview();
+      renderEnrichForm();
+      document.getElementById('uz').classList.add('ok');
+      document.getElementById('uz-title').textContent = '✓ '+rawAccounts.length+' accounts loaded';
+      document.getElementById('upload-next-btn').style.display = 'block';
+    } catch(err){ console.error(err); alert('Could not read CSV. Check the format matches the template.'); }
+  };
+  reader.readAsText(file);
+}
+
+function renderPreview() {
+  document.getElementById('preview-card').style.display='block';
+  document.getElementById('preview-count').textContent=rawAccounts.length;
+  var html='<thead><tr><th>Account</th><th>FY24</th><th>FY25</th><th>FY26</th><th>3yr CAGR</th></tr></thead><tbody>';
+  rawAccounts.forEach(function(a){
+    var fy24=a.monthly36.slice(0,12).reduce(function(s,v){return s+v},0);
+    var fy25=a.monthly36.slice(12,24).reduce(function(s,v){return s+v},0);
+    var fy26=a.monthly36.slice(24,36).reduce(function(s,v){return s+v},0);
+    var cagr=cagrCalc(fy24,fy26,3);
+    var cs=cagr!==null?(cagr>=0?'+':'')+cagr.toFixed(1)+'%':'—';
+    var cc=cagr===null?'var(--mt)':cagr>=10?'var(--gn)':cagr>=0?'var(--am)':'var(--rd)';
+    html+='<tr><td style="font-weight:600">'+a.name+'</td><td class="mono">'+fmtV(fy24)+'</td><td class="mono">'+fmtV(fy25)+'</td><td class="mono">'+fmtV(fy26)+'</td><td class="mono" style="color:'+cc+'">'+cs+'</td></tr>';
+  });
+  html+='</tbody>';
+  document.getElementById('preview-table').innerHTML=html;
+}
+
+// ────────────────────────────────────────────────────────
+// STEP 2 — ENRICH FORM
+// ────────────────────────────────────────────────────────
+function mkSel(id, val) {
+  return '<select id="'+id+'" style="padding:4px 6px;font-size:12px;width:60px;border-width:1px">'+
+    [1,2,3,4,5].map(function(n){return'<option value="'+n+'"'+(n==val?' selected':'')+'>'+n+'</option>'}).join('')+'</select>';
+}
+
+function renderEnrichForm() {
+  var html='';
+  rawAccounts.forEach(function(a,i){
+    var fy24=a.monthly36.slice(0,12).reduce(function(s,v){return s+v},0);
+    var fy26=a.monthly36.slice(24,36).reduce(function(s,v){return s+v},0);
+    var cagr=cagrCalc(fy24,fy26,3);
+    var cs=cagr!==null?(cagr>=0?'+':'')+cagr.toFixed(1)+'%':'—';
+    var cc=cagr===null?'var(--mt)':cagr>=10?'var(--gn)':cagr>=0?'var(--am)':'var(--rd)';
+    html+='<div class="lw-row">'+
+      '<div class="lw-name" title="'+a.name+'">'+a.name+'</div>'+
+      '<div class="mono" style="font-size:12px;color:'+cc+'">'+cs+'</div>'+
+      '<div class="mono" style="font-size:12px">'+fmtV(fy26)+'</div>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+
+      '<span style="font-size:11px;color:var(--mt)">Rel</span>'+
+      '<select id="rel-'+i+'" style="padding:4px 6px;font-size:12px;width:60px;border-width:1px"><option value="0" selected>—</option>'+[1,2,3,4,5].map(function(n){return'<option value="'+n+'">'+n+'</option>'}).join('')+'</select>'+
+      '<span style="font-size:11px;color:var(--mt)">Comp</span>'+
+      '<select id="comp-'+i+'" style="padding:4px 6px;font-size:12px;width:60px;border-width:1px"><option value="0" selected>—</option>'+[1,2,3,4,5].map(function(n){return'<option value="'+n+'">'+n+'</option>'}).join('')+'</select>'+
+      '<span style="font-size:11px;color:var(--mt)">Prod</span>'+
+      '<select id="prod-'+i+'" style="padding:4px 6px;font-size:12px;width:60px;border-width:1px"><option value="0" selected>—</option>'+[1,2,3,4,5].map(function(n){return'<option value="'+n+'">'+n+'</option>'}).join('')+'</select>'+
+      '</div></div>';
+  });
+  document.getElementById('enrich-list').innerHTML=html;
+}
+
+function syncEnrich() {
+  rawAccounts.forEach(function(a,i){
+    var rs=document.getElementById('rel-'+i);
+    var cs=document.getElementById('comp-'+i);
+    var ps=document.getElementById('prod-'+i);
+    // 0 means not provided — use null so classify knows to ignore
+    enriched[i].rel  = rs  ? (+rs.value  || null) : null;
+    enriched[i].comp = cs  ? (+cs.value  || null) : null;
+    enriched[i].prod = ps  ? (+ps.value  || null) : null;
+  });
+}
+
+// ────────────────────────────────────────────────────────
+// ACCOUNT META BUILDER
+// ────────────────────────────────────────────────────────
+function buildAccountMeta() {
+  return rawAccounts.map(function(a,i){
+    var fy24m=a.monthly36.slice(0,12);
+    var fy25m=a.monthly36.slice(12,24);
+    var fy26m=a.monthly36.slice(24,36);
+    var fy24=fy24m.reduce(function(s,v){return s+v},0);
+    var fy25=fy25m.reduce(function(s,v){return s+v},0);
+    var fy26=fy26m.reduce(function(s,v){return s+v},0);
+    var cagr=cagrCalc(fy24,fy26,3);
+    // Seasonality from 3 years of actuals
+    var sw=[];
+    for(var m=0;m<12;m++){
+      var t3=fy24m[m]+fy25m[m]+fy26m[m];
+      var tot=fy24+fy25+fy26;
+      sw.push(tot>0?t3/tot:1/12);
+    }
+    var wSum=sw.reduce(function(s,v){return s+v},0);
+    sw=sw.map(function(w){return w/wSum});
+    var nat=cagr!==null?fy26*(1+cagr/100):fy26;
+    var e=enriched[i]||{rel:3,comp:2,prod:3};
+    return{name:a.name,fy24:fy24,fy25:fy25,fy26:fy26,cagr:cagr,naturalFY27:nat,desiredFY27:nat,sw:sw,rel:e.rel,comp:e.comp,prod:e.prod};
+  });
+}
+
+// ────────────────────────────────────────────────────────
+// CLASSIFICATION
+// ────────────────────────────────────────────────────────
+function cagrCalc(y1,y3,yrs){if(!y1||!y3||y1<=0)return null;return(Math.pow(y3/y1,1/(yrs-1))-1)*100}
+
+function classify(cagr,rel,comp,prod){
+  if(cagr===null)return'unknown';
+  // Only use ratings if they were provided (non-null)
+  var hasRel=rel!==null&&rel>0;
+  var hasComp=comp!==null&&comp>0;
+  var hasProd=prod!==null&&prod>0;
+  if(hasComp&&hasRel&&comp>=4&&rel<=2)return'protect';
+  if(hasComp&&comp>=4&&cagr<5)return'protect';
+  if(hasRel&&hasProd&&rel>=4&&prod<=2)return'explore';
+  if(cagr>12&&(!hasComp||comp<=3))return'grow';
+  if(cagr>8&&hasRel&&rel>=4&&(!hasComp||comp<=3))return'grow';
+  if(cagr>8&&!hasRel&&!hasComp)return'grow';
+  if(cagr<0)return(hasComp&&comp>=3)?'protect':'hold';
+  if(hasProd&&prod>=4&&cagr<8)return'hold';
+  if(cagr>=5&&cagr<=8)return'hold';
+  return'grow';
+}
+
+function riskInfo(comp,rel){
+  if(!comp&&!rel)return['Risk: unknown','var(--mt)'];
+  var c=comp||3, r=rel||3;
+  var s=c-(r*0.5);
+  if(s>3)return['High risk','var(--rd)'];
+  if(s>1.5)return['Med risk','var(--am)'];
+  return['Low risk','var(--gn)'];
+}
+
+// ────────────────────────────────────────────────────────
+// TARGETS
+// ────────────────────────────────────────────────────────
+function recalcTargets(){
+  if(!computed.length)return;
+  var pct=Math.max(0,+document.getElementById('desired-pct').value||0);
+  var totalNat=computed.reduce(function(s,a){return s+a.naturalFY27},0);
+  var totalDes=totalNat*(1+pct/100);
+  computed.forEach(function(a){
+    a.desiredFY27=totalNat>0?(a.naturalFY27/totalNat)*totalDes:a.naturalFY27;
+  });
+  document.getElementById('natural-total').textContent='₹'+fmtV(totalNat);
+  document.getElementById('desired-total').textContent='₹'+fmtV(totalDes);
+  renderTargetTable();
+}
+
+function renderTargetTable(){
+  var html='';
+  computed.forEach(function(a,i){
+    var cs=a.cagr!==null?(a.cagr>=0?'+':'')+a.cagr.toFixed(1)+'%':'—';
+    var cc=a.cagr===null?'var(--mt)':a.cagr>=10?'var(--gn)':a.cagr>=0?'var(--am)':'var(--rd)';
+    var gap=a.desiredFY27-a.naturalFY27;
+    html+='<tr>'+
+      '<td style="font-weight:600">'+a.name+'</td>'+
+      '<td class="mono">'+fmtV(a.fy26)+'</td>'+
+      '<td class="mono" style="color:'+cc+'">'+cs+'</td>'+
+      '<td class="mono" style="color:var(--gn)">'+fmtV(a.naturalFY27)+'</td>'+
+      '<td><input type="number" value="'+Math.round(a.desiredFY27*10)/10+'" onchange="overrideDesired('+i+',+this.value)" style="width:90px;font-family:\'JetBrains Mono\',monospace;font-size:12px;font-weight:600;color:var(--am)"></td>'+
+      '<td class="mono" style="color:'+(gap>0?'var(--rd)':'var(--gn)')+'">'+fmtV(gap)+'</td>'+
+      '</tr>';
+  });
+  document.getElementById('target-table').innerHTML=html;
+}
+
+function overrideDesired(i, val){
+  if(computed[i]) computed[i].desiredFY27 = val;
+  // Update totals display
+  var totalNat=computed.reduce(function(s,a){return s+a.naturalFY27},0);
+  var totalDes=computed.reduce(function(s,a){return s+a.desiredFY27},0);
+  document.getElementById('natural-total').textContent='₹'+fmtV(totalNat);
+  document.getElementById('desired-total').textContent='₹'+fmtV(totalDes);
+}
+
+// ────────────────────────────────────────────────────────
+// COMPUTE FULL
+// ────────────────────────────────────────────────────────
+function computeFull(){
+  var totalNat=computed.reduce(function(s,a){return s+a.naturalFY27},0);
+  var totalDes=computed.reduce(function(s,a){return s+a.desiredFY27},0);
+  document.getElementById('natural-total').textContent='₹'+fmtV(totalNat);
+  document.getElementById('desired-total').textContent='₹'+fmtV(totalDes);
+  renderPriorities();
+  renderMonthly();
+  renderSimulator();
+  renderInsights();
+  goStep('priority');
+}
+
+// ────────────────────────────────────────────────────────
+// STEP 4 — PRIORITIES
+// ────────────────────────────────────────────────────────
+function renderPriorities(){
+  var totalFY26=computed.reduce(function(s,a){return s+a.fy26},0);
+  var totalNat=computed.reduce(function(s,a){return s+a.naturalFY27},0);
+  var totalDes=computed.reduce(function(s,a){return s+a.desiredFY27},0);
+  var gap=totalDes-totalNat;
+  var atRisk=computed.filter(function(a){return a.comp>=4&&a.rel<=2});
+  document.getElementById('pri-metrics').innerHTML=
+    '<div class="metric"><div class="ml">FY26 actual</div><div class="mv">'+fmtV(totalFY26)+'</div><div class="ms">'+computed.length+' accounts</div></div>'+
+    '<div class="metric"><div class="ml">Natural FY27</div><div class="mv" style="color:var(--gn)">'+fmtV(totalNat)+'</div><div class="ms">CAGR momentum</div></div>'+
+    '<div class="metric"><div class="ml">Desired FY27</div><div class="mv" style="color:var(--am)">'+fmtV(totalDes)+'</div><div class="ms">your ambition</div></div>'+
+    '<div class="metric"><div class="ml">Gap to close</div><div class="mv" style="color:var(--rd)">'+fmtV(gap)+'</div><div class="ms">above natural</div></div>';
+  document.getElementById('pri-warns').innerHTML=atRisk.map(function(a){
+    return'<div class="danger"><strong>'+a.name+'</strong> — competitor risk '+a.comp+'/5 + relationship '+a.rel+'/5. Requires immediate attention.</div>';
+  }).join('');
+  var ord={grow:0,explore:1,hold:2,protect:3,unknown:4};
+  var sorted=computed.slice().sort(function(a,b){return(ord[a.cls]||4)-(ord[b.cls]||4)});
+  var html='';
+  sorted.forEach(function(a,i){
+    var s=STRAT[a.cls]||STRAT.unknown;
+    var cs=a.cagr!==null?(a.cagr>=0?'+':'')+a.cagr.toFixed(1)+'% CAGR':'No CAGR';
+    html+='<div style="padding:12px 0;border-bottom:'+(i===sorted.length-1?'none':'1px solid var(--bd)')+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+      '<span style="font-weight:700;font-size:14px">'+a.name+'</span>'+
+      '<span class="badge '+s.bc+'">'+s.label+'</span>'+
+      '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.06);color:'+a.riskCol+';font-weight:600">'+a.riskLabel+'</span>'+
+      '</div>'+
+      '<div style="text-align:right;flex-shrink:0;margin-left:12px">'+
+      '<div style="font-size:11px;color:var(--mt)">Natural: <span class="mono" style="color:var(--gn);font-weight:600">'+fmtV(a.naturalFY27)+'</span></div>'+
+      '<div style="font-size:11px;color:var(--mt)">Desired: <span class="mono" style="color:var(--am);font-weight:600">'+fmtV(a.desiredFY27)+'</span></div>'+
+      '</div></div>'+
+      '<div style="font-size:11px;color:var(--mt)">FY26: '+fmtV(a.fy26)+' · '+cs+' · Rel '+a.rel+'/5 · Comp '+a.comp+'/5 · Prod '+a.prod+'/5</div>'+
+      '</div>';
+  });
+  document.getElementById('pri-list').innerHTML=html;
+  var cc={grow:'#00a86b',protect:'#e53e3e',hold:'#d97706',explore:'#2563eb',unknown:'#6b7094'};
+  var allVals=computed.map(function(a){return Math.max(a.naturalFY27,a.desiredFY27)});
+  var maxR=Math.max.apply(null,allVals.concat([1]));
+  var barsHTML=computed.map(function(a){
+    var natW=Math.max(1,Math.round(a.naturalFY27/maxR*100));
+    var desW=Math.max(1,Math.round(a.desiredFY27/maxR*100));
+    var acColor=cc[a.cls]||'#6b7094';
+    return'<div style="margin-bottom:10px">'+
+      '<div style="font-size:12px;font-weight:600;color:var(--tx);margin-bottom:4px">'+a.name+'</div>'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'+
+      '<div style="width:80px;font-size:10px;color:var(--mt);font-weight:500;flex-shrink:0">Natural</div>'+
+      '<div style="flex:1;height:10px;background:var(--sf2);border-radius:5px;overflow:hidden;border:1px solid var(--bd)">'+
+      '<div style="width:'+natW+'%;height:100%;background:#00a86b;border-radius:5px;transition:width .5s"></div></div>'+
+      '<div style="width:65px;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600;color:#00a86b;text-align:right;flex-shrink:0">'+fmtV(a.naturalFY27)+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+      '<div style="width:80px;font-size:10px;color:var(--mt);font-weight:500;flex-shrink:0">Desired</div>'+
+      '<div style="flex:1;height:10px;background:var(--sf2);border-radius:5px;overflow:hidden;border:1px solid var(--bd)">'+
+      '<div style="width:'+desW+'%;height:100%;background:'+acColor+';border-radius:5px;transition:width .5s"></div></div>'+
+      '<div style="width:65px;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:600;color:'+acColor+';text-align:right;flex-shrink:0">'+fmtV(a.desiredFY27)+'</div></div>'+
+      '</div>';
+  }).join('');
+  document.getElementById('pri-bars').innerHTML=barsHTML+
+    '<div style="font-size:11px;color:var(--mt);margin-top:8px;display:flex;gap:16px;padding-top:8px;border-top:1px solid var(--bd)">'+
+    '<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:6px;background:#00a86b;border-radius:3px;display:inline-block"></span>Natural CAGR target</span>'+
+    '<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:6px;background:var(--bl);border-radius:3px;display:inline-block"></span>Desired target (colour = account strategy)</span>'+
+    '</div>';
+}
+
+// ────────────────────────────────────────────────────────
+// STEP 5 — MONTHLY
+// ────────────────────────────────────────────────────────
+function renderMonthly(){
+  var curFM=Math.min(Math.max(+document.getElementById('cur-fm').value||1,1),12);
+  var achiev=+document.getElementById('fy-achieved').value||0;
+  var totalNat=computed.reduce(function(s,a){return s+a.naturalFY27},0);
+  var totalDes=computed.reduce(function(s,a){return s+a.desiredFY27},0);
+  // Aggregate seasonality
+  var aggSW=[0,0,0,0,0,0,0,0,0,0,0,0];
+  computed.forEach(function(a){a.sw.forEach(function(w,m){aggSW[m]+=w})});
+  var aggSum=aggSW.reduce(function(s,v){return s+v},0);
+  aggSW=aggSW.map(function(w){return w/aggSum});
+  var mNat=aggSW.map(function(w){return w*totalNat});
+  var mDes=aggSW.map(function(w){return w*totalDes});
+  // Adjust future months for shortfall
+  var ytdDes=mDes.slice(0,curFM-1).reduce(function(s,v){return s+v},0);
+  var remaining=totalDes-achiev;
+  var futSW=aggSW.slice(curFM-1);
+  var futSum=futSW.reduce(function(s,v){return s+v},0);
+  var adjFut=futSW.map(function(w){return futSum>0?(w/futSum)*remaining:0});
+
+  // Adjust for natural too — remaining natural target after YTD
+  var ytdNat=mNat.slice(0,curFM-1).reduce(function(s,v){return s+v},0);
+  var remainingNat=totalNat-achiev;
+  var adjNatFut=futSW.map(function(w){return futSum>0?(w/futSum)*remainingNat:0});
+
+  function makeGrid(elId, baseTargets, adjTargets){
+    var html='';
+    for(var m=0;m<12;m++){
+      var isPast=m<curFM-1, isCur=m===curFM-1;
+      var t=(achiev>0&&!isPast&&adjTargets)?adjTargets[m-(curFM-1)]:baseTargets[m];
+      var qCls=Q_BORDER[FY_Q[m]];
+      var cls=(isPast?'past ':isCur?'cur ':'')+qCls;
+      html+='<div class="mc '+cls+'">'+
+        '<div class="mn">'+FY_MONTHS[m]+'</div>'+
+        '<div class="mt2" style="font-size:12px;color:'+(isPast?'var(--mt)':isCur?'var(--bl)':'var(--tx)')+'">'+fmtShort(t)+'</div>'+
+        '<div class="mq">Q'+(FY_Q[m]+1)+'</div></div>';
+    }
+    document.getElementById(elId).innerHTML=html;
+  }
+  makeGrid('fy-grid-natural',mNat,adjNatFut);
+  makeGrid('fy-grid-desired',mDes,adjFut);
+
+  // Populate account select
+  var sel=document.getElementById('acc-select');
+  var prev=sel.value;
+  sel.innerHTML='<option value="">— Select an account —</option>';
+  computed.forEach(function(a,i){sel.innerHTML+='<option value="'+i+'">'+a.name+'</option>'});
+  if(prev) sel.value=prev;
+  renderAccountMonthly();
+
+  // Recovery
+  var shortfall=ytdDes-achiev;
+  var rmMonths=12-curFM+1;
+  var items=[];
+  if(achiev>0&&shortfall>0){
+    items.push(['YTD shortfall',fmtV(shortfall)+' behind desired plan']);
+    items.push(['Months left in FY27',rmMonths+' months ('+FY_MONTHS[curFM-1]+' – Mar 27)']);
+    items.push(['Extra per month',fmtV(shortfall/rmMonths)+' above normal target']);
+    var pa=computed.filter(function(a){return a.cls==='grow'||a.cls==='explore'});
+    if(pa.length) items.push(['Recovery via',pa.map(function(a){return a.name}).join(', ')]);
+    items.push(['Action','Focus recovery on Push and Explore accounts. Do not pressurise Protect accounts.']);
+  }else if(achiev>0&&shortfall<=0){
+    items.push(['YTD position',fmtV(Math.abs(shortfall))+' ahead of desired plan']);
+    items.push(['Remaining target',fmtV(remaining)+' over '+rmMonths+' months']);
+    items.push(['Action','Ahead of plan — use this confidence to open cross-sell conversations.']);
+  }else{
+    items.push(['Note','Enter your FY27 YTD revenue above to generate a recovery or acceleration plan.']);
+    items.push(['Seasonality','Monthly targets use your actual FY24–FY26 monthly pattern — not generic assumptions.']);
+  }
+  document.getElementById('recovery').innerHTML=items.map(function(it){
+    return'<div class="rr"><span style="color:var(--mt);font-weight:500">'+it[0]+'</span><span>'+it[1]+'</span></div>';
+  }).join('');
+}
+
+function renderAccountMonthly(){
+  var idx=document.getElementById('acc-select').value;
+  var el=document.getElementById('acc-monthly-grid');
+  if(idx===''){el.innerHTML='<div style="font-size:13px;color:var(--mt);padding:8px 0">Select an account above to see its monthly breakdown.</div>';return}
+  var a=computed[+idx];
+  if(!a){el.innerHTML='';return}
+  var curFM=Math.min(Math.max(+document.getElementById('cur-fm').value||1,1),12);
+  var achiev=+document.getElementById('fy-achieved').value||0;
+  // Account's share of total portfolio (used to split YTD achieved)
+  var totalNat=computed.reduce(function(s,c){return s+c.naturalFY27},0);
+  var totalDes=computed.reduce(function(s,c){return s+c.desiredFY27},0);
+  var accNatShare=totalNat>0?a.naturalFY27/totalNat:1/computed.length;
+  var accDesShare=totalDes>0?a.desiredFY27/totalDes:1/computed.length;
+  var accAchiev=achiev*accNatShare; // approximate account-level YTD
+  // Full year monthly breakdown
+  var natMonthly=a.sw.map(function(w){return w*a.naturalFY27});
+  var desMonthly=a.sw.map(function(w){return w*a.desiredFY27});
+  // Adjusted future months
+  var futSW=a.sw.slice(curFM-1);
+  var futSum=futSW.reduce(function(s,v){return s+v},0);
+  var remNat=a.naturalFY27-accAchiev;
+  var remDes=a.desiredFY27-(achiev*accDesShare);
+  var adjNat=futSW.map(function(w){return futSum>0?(w/futSum)*remNat:0});
+  var adjDes=futSW.map(function(w){return futSum>0?(w/futSum)*remDes:0});
+
+  function makeAccGrid(targets, adjTargets, color, label){
+    var html='<div style="font-size:12px;font-weight:600;color:var(--mt);margin-bottom:6px">'+a.name+' — '+label+'</div><div class="fy-grid" style="margin-bottom:10px">';
+    for(var m=0;m<12;m++){
+      var isPast=m<curFM-1,isCur=m===curFM-1;
+      var t=(achiev>0&&!isPast&&adjTargets)?adjTargets[m-(curFM-1)]:targets[m];
+      var qCls=Q_BORDER[FY_Q[m]];
+      var cls=(isPast?'past ':isCur?'cur ':'')+qCls;
+      html+='<div class="mc '+cls+'"><div class="mn">'+FY_MONTHS[m]+'</div>'+
+        '<div class="mt2" style="font-size:12px;color:'+(isPast?'var(--mt)':color)+'">'+fmtShort(t)+'</div>'+
+        '<div class="mq">Q'+(FY_Q[m]+1)+'</div></div>';
+    }
+    return html+'</div>';
+  }
+  el.innerHTML=makeAccGrid(natMonthly,adjNat,'var(--gn)','Natural CAGR targets')+
+               makeAccGrid(desMonthly,adjDes,'var(--am)','Desired targets');
+}
+
+// ────────────────────────────────────────────────────────
+// STEP 6 — SIMULATOR
+// ────────────────────────────────────────────────────────
+function renderSimulator(){
+  document.getElementById('sim-controls').innerHTML=computed.map(function(a,i){
+    var def=a.cls==='grow'?20:a.cls==='explore'?18:a.cls==='hold'?5:a.cls==='protect'?0:5;
+    var s=STRAT[a.cls]||STRAT.unknown;
+    return'<div class="sim-row">'+
+      '<div class="sim-lbl">'+a.name+' <span class="badge '+s.bc+'" style="font-size:9px">'+s.label+'</span></div>'+
+      '<input type="range" min="-30" max="60" step="1" value="'+def+'" id="si-'+i+'" oninput="updateSim()">'+
+      '<div class="sim-pct" id="sv-'+i+'">'+(def>=0?'+':'')+def+'%</div></div>';
+  }).join('');
+  updateSim();
+}
+
+function updateSim(){
+  var totalNat=computed.reduce(function(s,a){return s+a.naturalFY27},0);
+  var totalDes=computed.reduce(function(s,a){return s+a.desiredFY27},0);
+  var fy26Total=computed.reduce(function(s,a){return s+a.fy26},0);
+  var sim=0,warns=[];
+  computed.forEach(function(a,i){
+    var sl=document.getElementById('si-'+i);var vl=document.getElementById('sv-'+i);
+    if(!sl||!vl)return;
+    var pct=+sl.value;
+    vl.textContent=(pct>=0?'+':'')+pct+'%';
+    vl.style.color=pct>0?'var(--gn)':pct<0?'var(--rd)':'var(--mt)';
+    sim+=a.fy26*(1+pct/100);
+    if(a.comp>=4&&pct>15)warns.push('<strong>'+a.name+'</strong> — pushing +'+pct+'% with competitor risk '+a.comp+'/5. High risk of over-promising.');
+    if(a.prod<=2&&a.rel>=4&&pct<5)warns.push('<strong>'+a.name+'</strong> — strong relationship ('+a.rel+'/5) + low product use ('+a.prod+'/5). Cross-sell being ignored.');
+  });
+  var gPct=fy26Total>0?((sim-fy26Total)/fy26Total*100):0;
+  document.getElementById('sim-metrics').innerHTML=
+    '<div class="metric"><div class="ml">Simulated FY27</div><div class="mv">'+fmtV(sim)+'</div></div>'+
+    '<div class="metric"><div class="ml">vs Natural CAGR</div><div class="mv" style="color:'+(sim>=totalNat?'var(--gn)':'var(--rd)')+'\">'+(sim>=totalNat?'+':'-')+fmtV(Math.abs(sim-totalNat))+'</div></div>'+
+    '<div class="metric"><div class="ml">vs Desired target</div><div class="mv" style="color:'+(sim>=totalDes?'var(--gn)':'var(--am)')+'\">'+(sim>=totalDes?'Hit':fmtV(totalDes-sim)+' short')+'</div></div>'+
+    '<div class="metric"><div class="ml">Growth on FY26</div><div class="mv">'+gPct.toFixed(1)+'%</div></div>';
+  var maxV=Math.max(sim,totalNat,totalDes,fy26Total,1);
+  document.getElementById('sim-bars').innerHTML=[
+    {l:'FY26 actual',v:fy26Total,c:'#e2e4ed'},
+    {l:'Simulated FY27',v:sim,c:'#2563eb'},
+    {l:'Natural CAGR',v:totalNat,c:'#00a86b'},
+    {l:'Desired target',v:totalDes,c:'#d97706'}
+  ].map(function(r){
+    return'<div class="bar-row"><div class="bl2">'+r.l+'</div>'+
+      '<div class="bt"><div class="bf" style="width:'+Math.round(r.v/maxV*100)+'%;background:'+r.c+'"></div></div>'+
+      '<div class="bv">'+fmtV(r.v)+'</div></div>';
+  }).join('');
+  document.getElementById('sim-warns').innerHTML=warns.map(function(w){return'<div class="warn">'+w+'</div>'}).join('');
+}
+
+// ────────────────────────────────────────────────────────
+// STEP 7 — INSIGHTS (data-driven, not advice)
+// ────────────────────────────────────────────────────────
+function renderInsights(){
+  var totalFY26=computed.reduce(function(s,a){return s+a.fy26},0);
+  var totalFY25=computed.reduce(function(s,a){return s+a.fy25},0);
+  var totalNat=computed.reduce(function(s,a){return s+a.naturalFY27},0);
+  var totalDes=computed.reduce(function(s,a){return s+a.desiredFY27},0);
+  var gap=totalDes-totalNat;
+  var natGrowth=totalFY26>0?((totalNat-totalFY26)/totalFY26*100):0;
+  var desGrowth=totalFY26>0?((totalDes-totalFY26)/totalFY26*100):0;
+
+  // ── DATA SIGNALS ─────────────────────────────────────
+  // 1. Concentration: top account as % of portfolio
+  var sorted_by_rev=computed.slice().sort(function(a,b){return b.fy26-a.fy26});
+  var top1=sorted_by_rev[0];
+  var top1pct=totalFY26>0?(top1.fy26/totalFY26*100):0;
+  var top2pct=sorted_by_rev.length>1?((top1.fy26+(sorted_by_rev[1]?sorted_by_rev[1].fy26:0))/totalFY26*100):top1pct;
+
+  // 2. Accounts shrinking (negative CAGR)
+  var declining=computed.filter(function(a){return a.cagr!==null&&a.cagr<0});
+  var decRev=declining.reduce(function(s,a){return s+a.fy26},0);
+
+  // 3. Gap accounts — desired much higher than natural
+  var gapAccs=computed.filter(function(a){return(a.desiredFY27-a.naturalFY27)>a.naturalFY27*0.15});
+
+  // 4. Accounts with fast CAGR but also high comp risk
+  var highRiskHighGrowth=computed.filter(function(a){return a.cagr!==null&&a.cagr>10&&a.comp&&a.comp>=4});
+
+  // 5. Portfolio CAGR trend: FY24→FY25 vs FY25→FY26
+  var totFY24=computed.reduce(function(s,a){return s+a.fy24},0);
+  var growthFY24_25=totFY24>0?((totalFY25-totFY24)/totFY24*100):0;
+  var growthFY25_26=totalFY25>0?((totalFY26-totalFY25)/totalFY25*100):0;
+  var momentumDir=growthFY25_26>growthFY24_25?'accelerating':'decelerating';
+
+  // 6. Accounts where natural FY27 > desired (over-achieving naturally)
+  var naturalBeaters=computed.filter(function(a){return a.naturalFY27>a.desiredFY27*1.02});
+
+  // ── EXEC SUMMARY ─────────────────────────────────────
+  var signals=[];
+
+  // Concentration risk
+  if(top1pct>40){
+    signals.push({col:'#ff6b6b',icon:'!',
+      text:'Concentration risk: '+top1.name+' is '+top1pct.toFixed(0)+'% of your FY26 portfolio ('+fmtV(top1.fy26)+'). Any loss or slowdown here hits your total harder than any other account.'});
+  } else if(top2pct>55){
+    signals.push({col:'#fbbf24',icon:'!',
+      text:'Two accounts ('+sorted_by_rev[0].name+' + '+(sorted_by_rev[1]?sorted_by_rev[1].name:'')+')'+ ' make up '+top2pct.toFixed(0)+'% of portfolio. Your FY27 result depends heavily on just these two.'});
+  }
+
+  // Declining accounts
+  if(declining.length>0){
+    signals.push({col:'#ff6b6b',icon:'↓',
+      text:declining.length+' account'+(declining.length>1?'s are':' is')+' declining: '+declining.map(function(a){return a.name+' ('+a.cagr.toFixed(1)+'% CAGR)'}).join(', ')+
+      '. Combined FY26 revenue: '+fmtV(decRev)+'. If the trend continues, FY27 natural drops by '+fmtV(declining.reduce(function(s,a){return s+(a.fy26-a.naturalFY27)},0))+' from these alone.'});
+  }
+
+  // Momentum direction
+  signals.push({col:momentumDir==='accelerating'?'#00e5a0':'#fbbf24',icon:momentumDir==='accelerating'?'↑':'↓',
+    text:'Portfolio momentum is '+momentumDir+'. FY24→FY25 growth was '+growthFY24_25.toFixed(1)+'%, FY25→FY26 was '+growthFY25_26.toFixed(1)+'%. '+(momentumDir==='decelerating'?'Growth is slowing — your FY27 desired target assumes re-acceleration.':'Growth is speeding up — momentum is on your side for FY27.')});
+
+  // Gap between natural and desired — who carries the burden
+  if(gapAccs.length>0){
+    var gapBurden=gapAccs.map(function(a){return a.name+' (needs +'+fmtV(a.desiredFY27-a.naturalFY27)+' above trend)'}).join(', ');
+    signals.push({col:'#c4b5fd',icon:'→',
+      text:'Your desired target requires '+fmtV(gap)+' above natural CAGR. Accounts carrying this extra burden: '+gapBurden+'. These accounts need active effort — natural momentum alone won't get there.'});
+  }
+
+  // High growth but also high competitor risk
+  if(highRiskHighGrowth.length>0){
+    signals.push({col:'#fbbf24',icon:'!',
+      text:'Watch: '+highRiskHighGrowth.map(function(a){return a.name}).join(', ')+' show strong CAGR ('+highRiskHighGrowth.map(function(a){return a.cagr.toFixed(1)+'%'}).join(', ')+') but also high competitor risk. Growth numbers may reflect competitor pricing or a temporary situation — not a stable trend.'});
+  }
+
+  // Accounts naturally beating desired target
+  if(naturalBeaters.length>0){
+    signals.push({col:'#00e5a0',icon:'↑',
+      text:naturalBeaters.map(function(a){return a.name}).join(', ')+' will likely exceed their desired target on natural momentum alone. Consider raising their desired target — or reallocating that effort to accounts that actually need pushing.'});
+  }
+
+  // Gap feasibility
+  var pushAccs=computed.filter(function(a){return a.cls==='grow'||a.cls==='explore'});
+  var pushUplift=pushAccs.reduce(function(s,a){return s+(a.desiredFY27-a.naturalFY27)},0);
+  if(gap>0&&pushUplift<gap*0.6){
+    signals.push({col:'#ff6b6b',icon:'!',
+      text:'Gap feasibility concern: The '+fmtV(gap)+' gap to desired target cannot be covered by your current Push and Explore accounts alone (they can deliver ~'+fmtV(pushUplift)+'). Either lower desired growth, or identify new accounts.'});
+  }
+
+  var execHTML='<div class="exec-title">Portfolio data signals — what the numbers are telling you</div>'+
+    '<div class="exec-grid">'+
+    '<div class="exec-metric"><div class="exec-ml">Natural FY27 growth</div><div class="exec-mv" style="color:#00e5a0">'+natGrowth.toFixed(1)+'%</div></div>'+
+    '<div class="exec-metric"><div class="exec-ml">Desired FY27 growth</div><div class="exec-mv" style="color:#fbbf24">'+desGrowth.toFixed(1)+'%</div></div>'+
+    '<div class="exec-metric"><div class="exec-ml">Extra effort needed</div><div class="exec-mv" style="color:#ff6b6b">'+fmtV(gap)+'</div></div>'+
+    '</div>'+
+    '<div class="exec-bullets">'+
+    signals.map(function(b){
+      return'<div class="exec-bullet">'+
+        '<div class="exec-icon" style="background:'+b.col+'20;color:'+b.col+'">'+b.icon+'</div>'+
+        '<span>'+b.text+'</span></div>';
+    }).join('')+
+    '</div>';
+  document.getElementById('exec-summary').innerHTML=execHTML;
+
+  // ── ACCOUNT SIGNALS ──────────────────────────────────
+  var ord={grow:0,explore:1,protect:2,hold:3,unknown:4};
+  var sortedAccs=computed.slice().sort(function(a,b){return(ord[a.cls]||4)-(ord[b.cls]||4)});
+
+  document.getElementById('acc-ins').innerHTML=sortedAccs.map(function(a){
+    var s=STRAT[a.cls]||STRAT.unknown;
+    var cs=a.cagr!==null?(a.cagr>=0?'+':'')+a.cagr.toFixed(1)+'%':'—';
+    // Per-account data signals
+    var accSignals=[];
+
+    // CAGR trend: FY24-25 vs FY25-26
+    var cagr_a=a.fy25>0?((a.fy26-a.fy25)/a.fy25*100):null;
+    var cagr_b=a.fy24>0?((a.fy25-a.fy24)/a.fy24*100):null;
+    if(cagr_a!==null&&cagr_b!==null){
+      if(cagr_a<cagr_b-5) accSignals.push('Growth rate slowing: was '+cagr_b.toFixed(1)+'% (FY24→FY25), now '+cagr_a.toFixed(1)+'% (FY25→FY26).');
+      else if(cagr_a>cagr_b+5) accSignals.push('Growth rate accelerating: was '+cagr_b.toFixed(1)+'% (FY24→FY25), now '+cagr_a.toFixed(1)+'% (FY25→FY26).');
+    }
+
+    // Revenue share
+    var share=totalFY26>0?(a.fy26/totalFY26*100):0;
+    accSignals.push('FY26 share of portfolio: '+share.toFixed(1)+'%.');
+
+    // Gap between natural and desired
+    var accGap=a.desiredFY27-a.naturalFY27;
+    if(Math.abs(accGap)>a.fy26*0.05){
+      accSignals.push('Needs '+fmtV(accGap)+' above natural CAGR to hit desired target — '+(accGap>0?'requires active effort.':'natural momentum already exceeds desired target.'));
+    }
+
+    // Seasonality pattern — which quarter is strongest
+    var qTotals=[0,0,0,0];
+    a.sw.forEach(function(w,m){qTotals[Math.floor(m/3)]+=w});
+    var maxQ=qTotals.indexOf(Math.max.apply(null,qTotals));
+    var qNames=['Q1 (Apr-Jun)','Q2 (Jul-Sep)','Q3 (Oct-Dec)','Q4 (Jan-Mar)'];
+    accSignals.push('Historically strongest quarter: '+qNames[maxQ]+' ('+Math.round(qTotals[maxQ]*100)+'% of annual revenue).');
+
+    return'<div class="ins-item '+s.lc+'">'+
+      '<div class="ins-hdr">'+
+      '<span style="font-weight:700;font-size:14px">'+a.name+'</span>'+
+      '<span class="badge '+s.bc+'">'+s.label+'</span>'+
+      '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,0,0,.05);color:'+a.riskCol+';font-weight:600;margin-left:auto">'+a.riskLabel+'</span>'+
+      '<span class="mono" style="font-size:11px;color:var(--mt)">FY26: '+fmtV(a.fy26)+' · '+cs+' CAGR</span>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">'+
+      accSignals.map(function(sig){
+        return'<div style="font-size:12px;color:var(--tx);line-height:1.5;display:flex;gap:7px"><span style="color:var(--bl);flex-shrink:0;margin-top:2px">◆</span><span>'+sig+'</span></div>';
+      }).join('')+
+      '</div>'+
+      '<div style="display:flex;gap:14px;padding-top:8px;border-top:1px solid var(--bd);font-size:11px;font-weight:500">'+
+      '<span>Natural FY27: <span class="mono" style="color:var(--gn)">'+fmtV(a.naturalFY27)+'</span></span>'+
+      '<span>Desired FY27: <span class="mono" style="color:var(--am)">'+fmtV(a.desiredFY27)+'</span></span>'+
+      '<span>Gap: <span class="mono" style="color:'+(accGap>0?'var(--rd)':'var(--gn)')+'">'+fmtV(accGap)+'</span></span>'+
+      '</div></div>';
+  }).join('');
+}
+</script>
+</body>
+</html>
